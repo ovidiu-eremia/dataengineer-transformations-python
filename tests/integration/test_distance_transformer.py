@@ -4,6 +4,8 @@ from typing import Tuple
 
 import pytest
 from pyspark.sql.types import StructField, DoubleType
+from pyspark.sql import DataFrame
+from pyspark.sql import functions as fn
 
 from data_transformations.citibike import distance_transformer
 from tests.integration import SPARK
@@ -92,11 +94,10 @@ def test_should_maintain_all_data_it_reads() -> None:
     expected_columns = set(given_dataframe.columns)
     expected_schema = set(given_dataframe.schema)
 
-    assert expected_columns == actual_columns
+    assert expected_columns.issubset(actual_columns)
     assert expected_schema.issubset(actual_schema)
 
 
-@pytest.mark.skip
 def test_should_add_distance_column_with_calculated_distance() -> None:
     given_ingest_folder, given_transform_folder = __create_ingest_and_transform_folders()
     distance_transformer.run(SPARK, given_ingest_folder, given_transform_folder)
@@ -114,7 +115,7 @@ def test_should_add_distance_column_with_calculated_distance() -> None:
     actual_distance_schema = actual_dataframe.schema['distance']
 
     assert expected_distance_schema == actual_distance_schema
-    assert expected_dataframe.collect() == actual_dataframe.collect()
+    assert __check_dataframes_equality(expected_dataframe, actual_dataframe)
 
 
 def __create_ingest_and_transform_folders() -> Tuple[str, str]:
@@ -124,3 +125,13 @@ def __create_ingest_and_transform_folders() -> Tuple[str, str]:
     ingest_dataframe = SPARK.createDataFrame(SAMPLE_DATA, BASE_COLUMNS)
     ingest_dataframe.write.parquet(ingest_folder, mode='overwrite')
     return ingest_folder, transform_folder
+
+
+def __check_dataframes_equality(df1: DataFrame, df2: DataFrame) -> bool:
+    df1_cols = sorted(df1.columns)
+    df2_cols = sorted(df2.columns)
+    df1_groupedby_cols = df1.groupby(df1_cols).agg(fn.count(df1_cols[1]))
+    df2_groupedby_cols = df2.groupby(df2_cols).agg(fn.count(df2_cols[1]))
+    if df1_groupedby_cols.subtract(df2_groupedby_cols).rdd.isEmpty():
+        return df2_groupedby_cols.subtract(df1_groupedby_cols).rdd.isEmpty()
+    return False

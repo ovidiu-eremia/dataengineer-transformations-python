@@ -12,14 +12,13 @@ def _get_file_paths(input_file_lines: List[str]) -> Tuple[str, str]:
     base_path = tempfile.mkdtemp()
 
     input_text_path = "%s%sinput.txt" % (base_path, os.path.sep)
-    with open(input_text_path, 'w') as input_file:
+    with open(input_text_path, 'w', encoding="utf8") as input_file:
         input_file.writelines(input_file_lines)
 
     output_path = "%s%soutput" % (base_path, os.path.sep)
     return input_text_path, output_path
 
 
-@pytest.mark.skip
 def test_should_tokenize_words_and_count_them() -> None:
     lines = [
         "In my younger and more vulnerable years my father gave me some advice that I've been "

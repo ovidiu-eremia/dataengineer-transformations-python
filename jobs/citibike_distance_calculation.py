@@ -12,12 +12,12 @@ if __name__ == '__main__':
     logging.basicConfig(filename=LOG_FILENAME, level=logging.INFO)
     arguments = sys.argv
 
-    if len(arguments) is not 3:
+    if len(arguments) != 3:
         logging.warning("Dataset file path and output path not specified!")
         sys.exit(1)
 
-    dataset_path = arguments[2]
-    output_path = arguments[3]
+    dataset_path = arguments[1]
+    output_path = arguments[2]
 
     spark = SparkSession.builder.appName(APP_NAME).getOrCreate()
     logging.info("Application Initialized: " + spark.sparkContext.appName)
